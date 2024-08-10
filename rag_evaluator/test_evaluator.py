@@ -1,6 +1,8 @@
 import unittest
-from .evaluator import RAGEvaluator
-
+from evaluator import RAGEvaluator
+import nltk
+nltk.download('punkt')
+from nltk.tokenize import PunktTokenizer
 class TestRAGEvaluator(unittest.TestCase):
     def setUp(self):
         self.evaluator = RAGEvaluator()
@@ -10,6 +12,8 @@ class TestRAGEvaluator(unittest.TestCase):
         response = "Climate change is caused by human activities."
         reference = "Human activities such as burning fossil fuels cause climate change."
         metrics = self.evaluator.evaluate_all(question, response, reference)
+        for metric_name, metric_value in metrics.items():
+            print(f"{metric_name}: {metric_value}")
         self.assertIsInstance(metrics, dict)
         self.assertIn("BLEU", metrics)
         self.assertIn("ROUGE-1", metrics)
@@ -17,6 +21,7 @@ class TestRAGEvaluator(unittest.TestCase):
         self.assertIn("Perplexity", metrics)
         self.assertIn("Diversity", metrics)
         self.assertIn("Racial Bias", metrics)
+        self.assertIn("Entropy", metrics)
         self.assertIn("METEOR", metrics)
         self.assertIn("CHRF", metrics)
         self.assertIn("Flesch Reading Ease", metrics)
