@@ -10,6 +10,12 @@ from nltk.translate.meteor_score import meteor_score
 from nltk.translate.chrf_score import sentence_chrf
 from textstat import flesch_reading_ease, flesch_kincaid_grade
 from sklearn.metrics.pairwise import cosine_similarity
+from mauve import compute_mauve
+from nltk import FreqDist
+import numpy as np
+
+
+nltk.download()
 
 class RAGEvaluator:
     def __init__(self):
@@ -79,7 +85,18 @@ class RAGEvaluator:
         flesch_ease = flesch_reading_ease(text)
         flesch_grade = flesch_kincaid_grade(text)
         return flesch_ease, flesch_grade
-
+        
+       
+    def evaluate_entropy(self, text, n=3):
+        texts = str(text)
+        tokens = nltk.word_tokenize(texts)
+        n_grams = list(ngrams(tokens, n))
+        freq_dist = FreqDist(n_grams)
+        total_ngrams = len(n_grams)
+        
+        entropy = -sum((freq / total_ngrams) * np.log2(freq / total_ngrams) for freq in freq_dist.values())
+        return entropy
+   
     def evaluate_all(self, question, response, reference):
         candidates = [response]
         references = [reference]
@@ -87,7 +104,9 @@ class RAGEvaluator:
         bert_p, bert_r, bert_f1 = self.evaluate_bert_score(candidates, references)
         perplexity = self.evaluate_perplexity(response)
         diversity = self.evaluate_diversity(candidates)
+        entropy = self.evaluate_entropy(response)
         racial_bias = self.evaluate_racial_bias(response)
+        mauve_score = self.evaluate_mauve(reference, response)
         meteor = self.evaluate_meteor(candidates, references)
         chrf = self.evaluate_chrf(candidates, references)
         flesch_ease, flesch_grade = self.evaluate_readability(response)
@@ -100,6 +119,7 @@ class RAGEvaluator:
             "Perplexity": perplexity,
             "Diversity": diversity,
             "Racial Bias": racial_bias,
+            "Entropy": entropy,
             "METEOR": meteor,
             "CHRF": chrf,
             "Flesch Reading Ease": flesch_ease,
